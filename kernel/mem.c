@@ -177,16 +177,44 @@ vm_page_remove(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
 int
 vm_map_range(pagetable_t pagetable, uint64 va, uint64 size, int perm)
 {
-
-  
     // Loop through each virtual address pages. Note that va is not
     // necessarily page alligned, and so you must round it down.
     // We will allocate a new physical page frame for each page, and
     // then use vm_page_insert to add the page to the table.
     // YOUR CODE HERE
-    return -1;
-}
 
+    uint64 start, last, pa;
+
+
+    if(size == 0){
+      return 0;
+    }
+
+    start = PGROUNDDOWN(va);
+    last = PGROUNDDOWN(va + size - 1);
+
+    for(;;){
+
+      pa = (uint64) vm_page_alloc();
+
+      if(pa == 0){
+        return -1;
+      }
+
+      if(vm_page_insert(pagetable, va, pa, perm) < 0){
+        vm_page_free((void *)pa);
+        return -1;
+      }
+
+      if(start == last){
+        break;
+      }
+
+      start += PGSIZE;
+    }
+
+    return 0;
+}
 
 // Return the address of the PTE in page table pagetable
 // that corresponds to virtual address va.  If alloc!=0,
